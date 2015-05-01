@@ -52,7 +52,7 @@ def updateDB():
 def main():   
     radioSetup()
     explodeString("*T&26.00&H&33.00#")
-	index = 0
+    index = 0
     while True:
         pipe = [0]
         radio.startListening()
@@ -62,13 +62,13 @@ def main():
         out = ''.join(chr(i) for i in recv_buffer)
         test = str(recv_buffer)
         test.strip()
-		msgToDisplay = "Running" + "." * (index % 4)
+        msgToDisplay = "Running" + "." * (index % 4)
         print "              "
-		sys.stdout.write("\033[F]")
-		print msgToDisplay
-		print rcvd
-		sys.stdout.write("\033[F]")
-		sys.stdout.write("\033[F]")
+        sys.stdout.write("\033[F]")
+        print msgToDisplay
+        print rcvd
+        sys.stdout.write("\033[F]")
+        sys.stdout.write("\033[F]")
         if ((out[0] == '*') and ((out[len(test) - 97]) == '#') and ('&' in out)):
            explodeString(out)
            callBack("*OK#")
