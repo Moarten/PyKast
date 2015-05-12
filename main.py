@@ -6,12 +6,12 @@ from time import gmtime, strftime
 
 charsToRemove = ['*','#']
 sensors = {'T': 0, 'H': 1}
+radio = NRF24()
 #DB stuff
 con = mdb.connect('localhost','koelkast','amstelbier','koelkast');
 
 def radioSetup():
-    pipes = [[0xf0, 0xf0, 0xf0, 0xf0, 0xe1], [0xf0, 0xf0, 0xf0, 0xf0, 0xd2]]
-    radio = NRF24()
+    pipes = [[0xf0, 0xf0, 0xf0, 0xf0, 0xe1], [0xf0, 0xf0, 0xf0, 0xf0, 0xd2]]    
     radio.begin(0, 0,25,18)
     radio.setRetries(15,15)
     radio.setPayloadSize(32)
@@ -47,9 +47,9 @@ def callBack(msg):
 def updateDB():
     return
 
-def main():
-    explodeString("*T&26.00&H&33.00#")
+def main():   
     radioSetup()
+	explodeString("*T&26.00&H&33.00#")
     while True:
         pipe = [0]
         radio.startListening()
