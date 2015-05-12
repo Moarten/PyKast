@@ -25,7 +25,7 @@ def radioSetup():
     radio.write("*OK#")
     radio.printDetails()
     radio.startListening()
-	return
+    return
 	
 def explodeString(received):
     received = received.translate(None, ''.join(charsToRemove))
