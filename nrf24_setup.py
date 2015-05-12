@@ -16,5 +16,4 @@ radio.stopListening()
 radio.write("*OK#")
 radio.printDetails()
 radio.startListening()
-charsToRemove = ['*','#']
-sensors = {'T': 0, 'H': 1}
+

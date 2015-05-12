@@ -3,6 +3,8 @@ import sys, nrf24_setup
 import time
 from time import gmtime, strftime
 
+charsToRemove = ['*','#']
+sensors = {'T': 0, 'H': 1}
 #DB stuff
 con = mdb.connect('localhost','koelkast','amstelbier','koelkast');
 
