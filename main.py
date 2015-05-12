@@ -49,7 +49,7 @@ def updateDB():
 
 def main():   
     radioSetup()
-	explodeString("*T&26.00&H&33.00#")
+    explodeString("*T&26.00&H&33.00#")
     while True:
         pipe = [0]
         radio.startListening()
