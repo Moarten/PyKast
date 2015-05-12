@@ -1,3 +1,4 @@
+from nrf24 import NRF24
 import MySQLdb as mdb
 import sys, nrf24_setup
 import time
