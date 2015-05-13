@@ -8,7 +8,6 @@ charsToRemove = ['*','#']
 sensors = {'T': 0, 'H': 1}
 radio = NRF24()
 rcvd = -1
-#DB stuff
 con = mdb.connect('localhost','koelkast','amstelbier','koelkast');
 
 def radioSetup():
