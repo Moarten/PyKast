@@ -5,7 +5,7 @@ import time
 from time import gmtime, strftime
 
 charsToRemove = ['*','#']
-sensors = {'T': 0, 'H': 1}
+sensors = {'T': 1, 'H': 2}
 radio = NRF24()
 rcvd = -1
 con = mdb.connect('localhost','koelkast','amstelbier','koelkast');
@@ -36,7 +36,7 @@ def explodeString(received):
     with con:
         cur = con.cursor()
         for x in xrange(len(exploded)/2):
-		    sql = "INSERT INTO sensor_data(sensorID, value) VALUES(%s, %s)"
+	    sql = "INSERT INTO sensor_data SET sensorID = %s, value = %s"
             cur.execute(sql,(sensors[exploded[x+x]],exploded[x+x+1]))
     return
 
@@ -64,11 +64,12 @@ def main():
         test.strip()
         msgToDisplay = "Running" + "." * (index % 4)
         print "              "
-        sys.stdout.write("\033[F]")
+        sys.stdout.write("\033[F")
         print msgToDisplay
         print rcvd
-        sys.stdout.write("\033[F]")
-        sys.stdout.write("\033[F]")
+        sys.stdout.write("\033[F")
+        sys.stdout.write("\033[F")
+        index += 1
         if ((out[0] == '*') and ((out[len(test) - 97]) == '#') and ('&' in out)):
            explodeString(out)
            callBack("*OK#")
