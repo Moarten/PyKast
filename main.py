@@ -36,7 +36,8 @@ def explodeString(received):
     with con:
         cur = con.cursor()
         for x in xrange(len(exploded)/2):
-            cur.execute("INSERT INTO sensor_data(sensorID, value) VALUES(%s, %s)",(sensors[exploded[x+x]],exploded[x+x+1]))
+		    sql = "INSERT INTO sensor_data(sensorID, value) VALUES(%s, %s)"
+            cur.execute(sql,(sensors[exploded[x+x]],exploded[x+x+1]))
     return
 
 def callBack(msg):
