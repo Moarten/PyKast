@@ -1,82 +1,89 @@
+#!/usr/bin/python
+"""Main python file."""
+
 from nrf24 import NRF24
 import MySQLdb as mdb
 import sys
 import time
-from time import gmtime, strftime
+#from time import gmtime, strftime
 
-charsToRemove = ['*','#']
-sensors = {'T': 0, 'H': 1}
-radio = NRF24()
-rcvd = -1
-con = mdb.connect('localhost','koelkast','amstelbier','koelkast');
+CHARS_TO_REMOVE = ['*', '#']
+SENSORS = {'T': 0, 'H': 1}
+RADIO = NRF24()
+CON = mdb.connect('localhost', 'koelkast', 'amstelbier', 'koelkast')
 
-def radioSetup():
-    pipes = [[0xf0, 0xf0, 0xf0, 0xf0, 0xe1], [0xf0, 0xf0, 0xf0, 0xf0, 0xd2]]    
-    radio.begin(0, 0,25,18)
-    radio.setRetries(15,15)
-    radio.setPayloadSize(32)
-    radio.setChannel(0x4c)
-    radio.setDataRate(NRF24.BR_250KBPS)
-    radio.setPALevel(NRF24.PA_MAX)
-    radio.openWritingPipe(pipes[0])
-    radio.openReadingPipe(1, pipes[1])
-    radio.startListening()
-    radio.stopListening()
-    radio.write("*OK#")
-    radio.printDetails()
-    radio.startListening()
+def radio_setup():
+    """The function for setting up the radio."""
+    pipes = [[0xf0, 0xf0, 0xf0, 0xf0, 0xe1], [0xf0, 0xf0, 0xf0, 0xf0, 0xd2]]
+    RADIO.begin(0, 0, 25, 18)
+    RADIO.setRetries(15, 15)
+    RADIO.setPayloadSize(32)
+    RADIO.setChannel(0x4c)
+    RADIO.setDataRate(NRF24.BR_250KBPS)
+    RADIO.setPALevel(NRF24.PA_MAX)
+    RADIO.openWritingPipe(pipes[0])
+    RADIO.openReadingPipe(1, pipes[1])
+    RADIO.startListening()
+    RADIO.stopListening()
+    RADIO.write("*OK#")
+    RADIO.printDetails()
+    RADIO.startListening()
     return
-	
-def explodeString(received):
-    global rcvd
-    received = received.translate(None, ''.join(charsToRemove))
+
+def explode_string(received, rvcd):
+    """The function for exploding a string."""
+    received = received.translate(None, ''.join(CHARS_TO_REMOVE))
     exploded = received.split("&")
 #    print received
-    rcvd += 1
-    with con:
-        cur = con.cursor()
+    rvcd += 1
+    with CON:
+        cur = CON.cursor()
         for x in xrange(len(exploded)/2):
-		    sql = "INSERT INTO sensor_data(sensorID, value) VALUES(%s, %s)"
-            cur.execute(sql,(sensors[exploded[x+x]],exploded[x+x+1]))
+            sql = "INSERT INTO sensor_data(sensorID, value) VALUES(%s, %s)"
+            cur.execute(sql, (SENSORS[exploded[x+x]], exploded[x+x+1]))
+    return rvcd
+
+def call_back(msg):
+    """The function for calling back."""
+    RADIO.stopListening()
+    RADIO.write(msg)
+    RADIO.startListening()
     return
 
-def callBack(msg):
-    radio.stopListening()
-    radio.write(msg)
-    radio.startListening()
+def update_database():
+    """The function for updating the database."""
     return
 
-def updateDB():
-    return
-
-def main():   
-    radioSetup()
-    explodeString("*T&26.00&H&33.00#")
+def main():
+    """The main function."""
+    rvcd = -1
+    radio_setup()
+    rvcd = explode_string("*T&26.00&H&33.00#", rvcd)
     index = 0
     while True:
-        pipe = [0]
-        radio.startListening()
+        #pipe = [0]
+        RADIO.startListening()
         time.sleep(1)
         recv_buffer = []
-        radio.read(recv_buffer)
+        RADIO.read(recv_buffer)
         out = ''.join(chr(i) for i in recv_buffer)
         test = str(recv_buffer)
         test.strip()
-        msgToDisplay = "Running" + "." * (index % 4)
+        msg_to_display = "Running" + "." * (index % 4)
         print "              "
         sys.stdout.write("\033[F]")
-        print msgToDisplay
-        print rcvd
+        print msg_to_display
+        print rvcd
         sys.stdout.write("\033[F]")
         sys.stdout.write("\033[F]")
-        if ((out[0] == '*') and ((out[len(test) - 97]) == '#') and ('&' in out)):
-           explodeString(out)
-           callBack("*OK#")
+        if (out[0] == '*') and ((out[len(test) - 97]) == '#') and ('&' in out):
+            rvcd = explode_string(out, rvcd)
+            call_back("*OK#")
    #    else:
-   #       callBack("*slagroomsoesjses#")
-    
-    if con:
-        con.close()
+   #       call_back("*slagroomsoesjses#")
+
+    if CON:
+        CON.close()
 
 if __name__ == "__main__":
     main()
