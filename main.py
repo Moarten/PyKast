@@ -7,6 +7,7 @@ from time import gmtime, strftime
 charsToRemove = ['*','#']
 sensors = {'T': 0, 'H': 1}
 radio = NRF24()
+rcvd = -1
 #DB stuff
 con = mdb.connect('localhost','koelkast','amstelbier','koelkast');
 
@@ -28,14 +29,15 @@ def radioSetup():
     return
 	
 def explodeString(received):
+    global rcvd
     received = received.translate(None, ''.join(charsToRemove))
     exploded = received.split("&")
-    print received
+#    print received
+    rcvd += 1
     with con:
         cur = con.cursor()
         for x in xrange(len(exploded)/2):
             cur.execute("INSERT INTO sensor_data(sensorID, value) VALUES(%s, %s)",(sensors[exploded[x+x]],exploded[x+x+1]))
-            print exploded[x+x+1]
     return
 
 def callBack(msg):
@@ -50,6 +52,7 @@ def updateDB():
 def main():   
     radioSetup()
     explodeString("*T&26.00&H&33.00#")
+	index = 0
     while True:
         pipe = [0]
         radio.startListening()
@@ -59,7 +62,13 @@ def main():
         out = ''.join(chr(i) for i in recv_buffer)
         test = str(recv_buffer)
         test.strip()
-        print out;
+		msgToDisplay = "Running" + "." * (index % 4)
+        print "              "
+		sys.stdout.write("\033[F]")
+		print msgToDisplay
+		print rcvd
+		sys.stdout.write("\033[F]")
+		sys.stdout.write("\033[F]")
         if ((out[0] == '*') and ((out[len(test) - 97]) == '#') and ('&' in out)):
            explodeString(out)
            callBack("*OK#")
