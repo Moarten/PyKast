@@ -58,10 +58,10 @@ def update_database(received):
         if (values[0] == "A"):
             #ambient temp
             print "A"
-        elif (values[0] == "O")
+        elif (values[0] == "O"):
             #object temp
             print "O"
-        elif (values[0] == "P")
+        elif (values[0] == "P"):
             #product id
             print "P"
     return
