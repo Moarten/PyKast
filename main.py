@@ -8,7 +8,7 @@ import time
 #from time import gmtime, strftime
 
 CHARS_TO_REMOVE = ['*', '#']
-SENSORS = {'T': 1, 'H': 2}
+SENSORS = {'A': 0, 'O': 1}
 RADIO = NRF24()
 CON = mdb.connect('localhost', 'koelkast', 'amstelbier', 'koelkast')
 
@@ -30,16 +30,11 @@ def radio_setup():
     RADIO.startListening()
     return
 
-def explode_string(received):
-    """The function for exploding a string."""
-    received = received.translate(None, ''.join(CHARS_TO_REMOVE))
-    exploded = received.split("&")
-    print received
+def mysql_insert(sql):
+    """The function that is no longer for exploding a string."""
     with CON:
         cur = CON.cursor()
-        for x in xrange(len(exploded)/2):
-            sql = "INSERT INTO sensor_data SET sensorID = %s, value = %s"
-            cur.execute(sql, (SENSORS[exploded[x+x]], exploded[x+x+1]))
+        cur.execute(sql)
     return
 
 def call_back(msg):
@@ -50,29 +45,35 @@ def call_back(msg):
     return
 
 def update_database(received):
-    """The function for updating the database."""
+    """The function not for updating the database."""
     received = received.translate(None, ''.join(CHARS_TO_REMOVE))
     exploded = received.split("@")
-    for i in range(1, len(exploded)):
+    for i in range(0, len(exploded)):
         values = exploded[i].split("&")
-        if (values[0] == "A"):
-            #ambient temp
-            print "A"
-        elif (values[0] == "O"):
-            #object temp
-            print "O"
+        if ((values[0] == "A") or (values[0] == "O")):
+            #ambient or object temp
+            print values[0] + values[1]
+            mysql_insert("INSERT INTO sensor_data SET sensorID = " + str(SENSORS[values[0]]) + ", value = " + values[1])
         elif (values[0] == "P"):
             #product id
-            print "P"
+            if ( (len(exploded) > (i + 1)) and (exploded[i + 1][0] == "D")):
+                product_id = '-'.join(exploded[i].split("&")[1:])
+                print product_id
+                i += 1
+                exp_date = '-'.join(exploded[i].split("&")[1:])
+                print exp_date
+                mysql_insert("INSERT INTO productsFridge SET product_id = (SELECT id FROM products WHERE rfid_key = '" + product_id + "'), exp_date = '" + exp_date + "', unique_id = " + str(2))
+            else:
+                print "ERROR, EXPECTING EXPIRE DATE AFTER PRODUCT ID"
     return
 
 def main():
     """The main function."""
     radio_setup()
-    rvcd = explode_string("*T&26.00&H&33.00#", rvcd)
-    index = 0
-    while True:
-        #pipe = [0]
+    update_database("*P&1&0&0@D&15&10&15#")
+    update_database("*A&12.34@O&98.76#")
+    #index = 0
+    while True: 
         RADIO.startListening()
         time.sleep(1)
         recv_buffer = []
@@ -80,7 +81,7 @@ def main():
         out = ''.join(chr(i) for i in recv_buffer)
         test = str(recv_buffer)
         test.strip()
-        index += 1
+        #index += 1
         if (out[0] == '*') and ((out[len(test) - 97]) == '#') and ('&' in out):
             update_database(out)
             call_back("*OK#")
