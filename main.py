@@ -30,18 +30,17 @@ def radio_setup():
     RADIO.startListening()
     return
 
-def explode_string(received, rvcd):
+def explode_string(received):
     """The function for exploding a string."""
     received = received.translate(None, ''.join(CHARS_TO_REMOVE))
     exploded = received.split("&")
-#    print received
-    rvcd += 1
+    print received
     with CON:
         cur = CON.cursor()
         for x in xrange(len(exploded)/2):
             sql = "INSERT INTO sensor_data SET sensorID = %s, value = %s"
             cur.execute(sql, (SENSORS[exploded[x+x]], exploded[x+x+1]))
-    return rvcd
+    return
 
 def call_back(msg):
     """The function for calling back."""
@@ -50,13 +49,25 @@ def call_back(msg):
     RADIO.startListening()
     return
 
-def update_database():
+def update_database(received):
     """The function for updating the database."""
+    received = received.translate(None, ''.join(CHARS_TO_REMOVE))
+    exploded = received.split("@")
+    for i in range(1, len(exploded)):
+        values = exploded[i].split("&")
+        if (values[0] == "A"):
+            #ambient temp
+            print "A"
+        elif (values[0] == "O")
+            #object temp
+            print "O"
+        elif (values[0] == "P")
+            #product id
+            print "P"
     return
 
 def main():
     """The main function."""
-    rvcd = -1
     radio_setup()
     rvcd = explode_string("*T&26.00&H&33.00#", rvcd)
     index = 0
@@ -69,16 +80,9 @@ def main():
         out = ''.join(chr(i) for i in recv_buffer)
         test = str(recv_buffer)
         test.strip()
-        msg_to_display = "Running" + "." * (index % 4)
-        print "              "
-        sys.stdout.write("\033[F")
-        print msg_to_display
-        print rvcd
-        sys.stdout.write("\033[F")
-        sys.stdout.write("\033[F")
         index += 1
         if (out[0] == '*') and ((out[len(test) - 97]) == '#') and ('&' in out):
-            rvcd = explode_string(out, rvcd)
+            update_database(out)
             call_back("*OK#")
    #    else:
    #       call_back("*slagroomsoesjses#")
