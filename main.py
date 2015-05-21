@@ -17,7 +17,7 @@ def radio_setup():
     pipes = [[0xf0, 0xf0, 0xf0, 0xf0, 0xe1], [0xf0, 0xf0, 0xf0, 0xf0, 0xd2]]
     RADIO.begin(0, 0, 25, 18)
     RADIO.setRetries(15, 15)
-    RADIO.setPayloadSize(32)
+    RADIO.setPayloadSize(64)
     RADIO.setChannel(0x4c)
     RADIO.setDataRate(NRF24.BR_250KBPS)
     RADIO.setPALevel(NRF24.PA_MAX)
@@ -46,14 +46,17 @@ def call_back(msg):
 
 def update_database(received):
     """The function not for updating the database."""
-    received = received.translate(None, ''.join(CHARS_TO_REMOVE))
+    received = received.split("#")
+    received = received[0].translate(None, ''.join(CHARS_TO_REMOVE))
     exploded = received.split("@")
     for i in range(0, len(exploded)):
         values = exploded[i].split("&")
         if ((values[0] == "A") or (values[0] == "O")):
             #ambient or object temp
-            print values[0] + values[1]
-            mysql_insert("INSERT INTO sensor_data SET sensorID = " + str(SENSORS[values[0]]) + ", value = " + values[1])
+            print values[1]
+            print len(values[1])
+            mysql_insert("INSERT INTO sensor_data SET sensorID = " + str(SENSORS[values[0]]) + ", value = '" + values[1] + "'")
+#            mysql_insert("INSERT INTO sensor_data SET sensorID = " + str(SENSORS[values[0]]) + ", value = 2")
         elif (values[0] == "P"):
             #product id
             if ( (len(exploded) > (i + 1)) and (exploded[i + 1][0] == "D")):
@@ -64,15 +67,15 @@ def update_database(received):
                 print exp_date
                 mysql_insert("INSERT INTO productsFridge SET product_id = (SELECT id FROM products WHERE rfid_key = '" + product_id + "'), exp_date = '" + exp_date + "', unique_id = " + str(2))
             else:
-                print "ERROR, EXPECTING EXPIRE DATE AFTER PRODUCT ID"
+                print "ERROR, EXPECTING EXPIRATION DATE AFTER PRODUCT ID"
     return
 
 def main():
     """The main function."""
     radio_setup()
     update_database("*P&1&0&0@D&15&10&15#")
-    update_database("*A&12.34@O&98.76#")
-    #index = 0
+    update_database("*A&12.34@O&26.59#")
+    index = 0
     while True: 
         RADIO.startListening()
         time.sleep(1)
@@ -81,7 +84,7 @@ def main():
         out = ''.join(chr(i) for i in recv_buffer)
         test = str(recv_buffer)
         test.strip()
-        #index += 1
+        index += 1
         if (out[0] == '*') and ((out[len(test) - 97]) == '#') and ('&' in out):
             update_database(out)
             call_back("*OK#")
