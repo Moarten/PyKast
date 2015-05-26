@@ -31,7 +31,8 @@ def radio_setup():
 def mysql_execute(sql):
     with CON:
         cur = CON.cursor()
-        cur.execute(sql)
+        result = cur.execute(sql)
+        return cur.rowcount
 
 def call_back(msg):
     RADIO.stopListening()
@@ -50,27 +51,39 @@ def update_database(received):
             print values[1]
             print len(values[1])
             mysql_execute("INSERT INTO sensor_data SET sensorID = " + str(SENSORS[values[0]]) + ", value = " + values[1])
+            call_back("*OK#")
         elif values[0] == "P":
             #product id
             if (len(exploded) > (i + 2)) and (exploded[i + 1][0] == "D") and (exploded[i + 2][0] == "U"):
                 product_id = '-'.join(exploded[i].split("&")[1:])
+                exp_date = '-'.join(exploded[i + 1].split("&")[1:])
+                unique_id = '-'.join(exploded[i + 2].split("&")[1:])
                 print product_id
-                i += 1
-                exp_date = '-'.join(exploded[i].split("&")[1:])
-                if (exp_date == "0-0-0"):
-                    exp_date = "NULL"                 
                 print exp_date
-                i += 1
-                unique_id = ''.join(exploded[i].split("&")[1:])
                 print unique_id
-                mysql_execute("INSERT INTO productsFridge SET product_id = (SELECT id FROM products WHERE rfid_key = '" + product_id + "'), exp_date = '" + exp_date + "', unique_id = " + str(2))
+                i += 2
+
+                product_exists = mysql_execute("SELECT id FROM products WHERE rfid_key = '" + product_id + "'")
+                if (product_exists == 0):
+                    call_back("*NOTINDATABASE#")
+                    continue
+                if (exp_date == "0-0-0"):
+                    exp_date = "NULL" 
+
+                product_already_in_db = mysql_execute("SELECT id FROM productsFridge WHERE unique_id = '" + unique_id +"'")
+                if (product_already_in_db > 0):
+                    mysql_execute("DELETE FROM productsFridge WHERE unique_id = '" + unique_id + "'")
+                else:
+                    mysql_execute("INSERT INTO productsFridge SET product_id = (SELECT id FROM products WHERE rfid_key = '" + product_id + "'), exp_date = '" + exp_date + "', unique_id = '" + unique_id + "'")
+                call_back("*OK#")
             else:
                 print "ERROR, EXPECTING EXPIRATION DATE AFTER PRODUCT ID"
+                call_back("*INCORRECTSTRING#")
 
 def main():
     """The main function."""
     radio_setup()
-    update_database("*P&1&0&0@D&15&10&15@U&3#")
+    update_database("*P&6&0&0@D&15&10&15@U&3#")
     update_database("*A&12.34@O&26.59#")
     while True:
         RADIO.startListening()
@@ -82,7 +95,7 @@ def main():
         test.strip()
         if (out[0] == '*') and ((out[len(test) - 97]) == '#') and ('&' in out):
             update_database(out)
-            call_back("*OK#")
+   #         call_back("*OK#")
    #    else:
    #       call_back("*slagroomsoesjses#")
 
